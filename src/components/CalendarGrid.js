@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { format, addDays, startOfWeek, isBefore, parse } from 'date-fns';
 import Modal from './Modal';
+import CopyModal from './CopyModal';
 
 const CalendarGrid = ({ currentWeek, days }) => {
   const [isModalVisible, setModalVisible] = useState(false);
@@ -8,7 +9,11 @@ const CalendarGrid = ({ currentWeek, days }) => {
   const [selectedEmployees, setSelectedEmployees] = useState({});
   const [copySourceDay, setCopySourceDay] = useState(null);
   const [isCopyModalVisible, setCopyModalVisible] = useState(false);
-  const [targetDays, setTargetDays] = useState(days);
+  const [targetDays, setTargetDays] = useState([]);
+
+  useEffect(() => {
+    setTargetDays(days);  // Initialize with all days selected by default
+  }, [days]);
 
   const handleButtonClick = (shift) => {
     setSelectedShift(shift);
@@ -114,8 +119,7 @@ const CalendarGrid = ({ currentWeek, days }) => {
               <button className="bg-blue-500 text-white p-2 rounded mb-2" onClick={() => { setCopySourceDay(day); handleCopySchedule(); }} disabled={pastDate}>Copy</button>
               {shifts.map((shift, shiftIndex) => (
                 <div key={shiftIndex} className="flex-grow min-h-40 border-dashed border-2 rounded mb-2 flex flex-col items-center justify-center">
-                  <button className="border border-dashed rounded p-2 mb-2 mt-2" onClick={() => handleButtonClick({ ...shift, day })} disabled={pastDate}>+</button>
-                  <div className="max-h-20 overflow-y-auto min-w-full">
+                <div className="max-h-20 overflow-y-auto min-w-full">
                     {selectedEmployees[shift.name] && selectedEmployees[shift.name][day] && (
                       <div className="mt-2">
                         {selectedEmployees[shift.name][day].map(employee => (
@@ -127,12 +131,12 @@ const CalendarGrid = ({ currentWeek, days }) => {
                       </div>
                     )}
                   </div>
+                  <button className="border border-dashed rounded w-32 mb-2 mt-2" onClick={() => handleButtonClick({ ...shift, day })} disabled={pastDate}>+</button>
                 </div>
               ))}
             </div>
           );
         })}
-
         <Modal isVisible={isModalVisible} onClose={handleCloseModal}>
           <h2 className="text-xl font-bold mb-4">Select Employees for {selectedShift?.name}</h2>
           <div className="mb-4">
@@ -145,28 +149,15 @@ const CalendarGrid = ({ currentWeek, days }) => {
           </div>
           <button className="bg-blue-500 text-white p-2 rounded" onClick={handleCloseModal}>Confirm</button>
         </Modal>
-
-        <Modal isVisible={isCopyModalVisible} onClose={() => setCopyModalVisible(false)}>
-          <h2 className="text-xl font-bold mb-4">Sao chép từ ngày {copySourceDay}</h2>
-          <div className="mb-4 grid grid-cols-2 gap-4">
-            {days.map((day, index) => {
-              const pastDate = isPastDate(day);
-              return (
-                <div key={index} className="flex items-center mb-2">
-                  <input type="checkbox" id={`day-${index}`} className="mr-2" checked={targetDays.includes(day)} onChange={(e) => {
-                    if (e.target.checked) {
-                      setTargetDays([...targetDays, day]);
-                    } else {
-                      setTargetDays(targetDays.filter(d => d !== day));
-                    }
-                  }} disabled={pastDate} />
-                  <label htmlFor={`day-${index}`}>{day}</label>
-                </div>
-              );
-            })}
-          </div>
-          <button className="bg-blue-500 text-white p-2 rounded" onClick={handleConfirmCopy}>Xác nhận</button>
-        </Modal>
+        <CopyModal
+        isCopyModalVisible={isCopyModalVisible}
+        setCopyModalVisible={setCopyModalVisible}
+        copySourceDay={copySourceDay}
+        days={days}
+        targetDays={targetDays}
+        setTargetDays={setTargetDays}
+        handleConfirmCopy={handleConfirmCopy}
+      />
       </div>
     </div>
   );
